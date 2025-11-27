@@ -83,6 +83,4 @@ npm run dev
 - 🔄 Feedback dynamique sur les recommandations
 - 🔗 Partage sur réseaux sociaux
 
-## 📝 License
 
-MIT
