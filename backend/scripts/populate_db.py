@@ -109,7 +109,7 @@ async def main():
         films_added, films_updated = await fetch_and_store_films(
             db, 
             tmdb_service,
-            num_pages=100  # Fetch 100 pages (pages 1-100)
+            num_pages=20  # Fetch 20 pages (400 films) for faster startup
         )
         
         # Compute similarities

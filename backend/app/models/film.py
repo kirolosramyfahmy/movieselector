@@ -18,6 +18,7 @@ class Film(Base):
     poster_url = Column(String)
     popularity = Column(Float, default=0.0, index=True)
     vote_average = Column(Float, default=0.0, index=True)
+    vote_count = Column(Integer, default=0, index=True)
     overview = Column(String)
     director = Column(String)
     actors = Column(ARRAY(String))

@@ -11,12 +11,14 @@ class FilmBase(BaseModel):
     poster_url: Optional[str] = None
     popularity: float = 0.0
     vote_average: float = 0.0
+    vote_count: int = 0
 
 
 class FilmResponse(FilmBase):
     """Film response schema."""
     id: int
     tmdb_id: int
+    overview: Optional[str] = None
     
     class Config:
         from_attributes = True

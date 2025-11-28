@@ -49,6 +49,7 @@
               <div class="sort-controls">
                 <label for="sort-select">Trier par:</label>
                 <select id="sort-select" :value="currentSort" @change="handleSortChange">
+                  <option value="rating">Populaires & Mieux Notés</option>
                   <option value="recent_popular">Récents & Populaires</option>
                   <option value="popularity">Popularité</option>
                 </select>
@@ -94,7 +95,10 @@
         </div>
 
         <!-- Right Column: Sticky Sidebar (Selection) -->
-        <aside class="app-layout__sidebar">
+        <aside 
+          class="app-layout__sidebar" 
+          :class="{ 'is-open': isSidebarOpen }"
+        >
           <div class="sidebar-content">
             <div class="selected-films__header">
               <h3 class="selected-films__title">
@@ -126,6 +130,16 @@
             </div>
           </div>
         </aside>
+
+        <!-- Mobile Selection Toggle Button -->
+        <button 
+          class="mobile-selection-toggle"
+          @click="toggleSidebar"
+          v-if="filmStore.selectedFilms.length > 0"
+        >
+          <span class="toggle-icon">🎬</span>
+          <span class="toggle-badge">{{ filmStore.selectedFilms.length }}</span>
+        </button>
 
       </div>
     </section>
@@ -214,25 +228,7 @@
                   :show-selection="false"
                 />
                 
-                <div class="recommendation-card__actions">
-                  <button
-                    class="recommendation-btn recommendation-btn--like"
-                    :class="{ 'active': isLiked(film.id) }"
-                    @click="handleLike(film)"
-                    title="J'aime"
-                  >
-                    👍
-                  </button>
-                  
-                  <button
-                    class="recommendation-btn recommendation-btn--dislike"
-                    :class="{ 'active': isDisliked(film.id) }"
-                    @click="handleDislike(film)"
-                    title="Je n'aime pas"
-                  >
-                    👎
-                  </button>
-                </div>
+
               </div>
             </div>
           </div>
@@ -257,8 +253,16 @@ const similarFilmsMap = ref({})
 const loading = ref(false)
 const currentFilters = ref({})
 const currentPage = ref(1)
-const currentSort = ref('recent_popular') // Default as requested
+const currentSort = ref('rating') // Default to rating
 const hasMore = ref(true) // Simplified for now, ideally backend returns total count
+const isSidebarOpen = ref(false)
+
+const toggleSidebar = () => {
+  // Only toggle on mobile (check window width or just let CSS handle visibility)
+  if (window.innerWidth <= 1024) {
+    isSidebarOpen.value = !isSidebarOpen.value
+  }
+}
 
 const topRecommendation = computed(() => {
   return filmStore.recommendations.length > 0 ? filmStore.recommendations[0] : null
@@ -444,45 +448,56 @@ onMounted(async () => {
 /* Intro Section */
 .intro__content {
   text-align: center;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   position: relative;
+  padding: var(--spacing-3xl);
+  /* Removed background container as requested */
 }
 
-/* Abstract decorative glow behind title */
-.intro__content::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(185, 255, 102, 0.15) 0%, transparent 70%);
-  z-index: -1;
-  filter: blur(60px);
-  pointer-events: none;
-}
+/* Abstract decorative glow removed as requested */
 
 .intro__title {
   font-size: var(--font-size-6xl);
   margin-bottom: var(--spacing-xl);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
-  line-height: 1;
-  letter-spacing: -0.04em;
-  text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+  color: #ffffff; /* Solid white */
+  font-weight: 900; /* Extra bold */
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  /* Strong multi-layer shadow for legibility without background box */
+  text-shadow: 
+    0 2px 5px rgba(0, 0, 0, 0.8),
+    0 5px 15px rgba(0, 0, 0, 0.8),
+    0 10px 30px rgba(0, 0, 0, 0.8);
 }
 
 .intro__description {
   font-size: var(--font-size-xl);
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.95);
   margin-bottom: var(--spacing-3xl);
   line-height: var(--line-height-relaxed);
   font-family: var(--font-family-primary);
-  max-width: 600px;
+  max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+@media (max-width: 768px) {
+  .intro__title {
+    font-size: 3rem; /* Smaller title on mobile */
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .intro__description {
+    font-size: 1.1rem; /* Smaller description */
+    margin-bottom: var(--spacing-xl);
+    padding: 0 var(--spacing-md);
+  }
+  
+  .intro__content {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
 }
 
 .btn-get-started {
@@ -530,6 +545,117 @@ onMounted(async () => {
   border: var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+    padding-bottom: 100px; /* Space for fixed bottom bar */
+  }
+
+  .app-layout__sidebar {
+    position: fixed;
+    bottom: var(--spacing-md);
+    top: auto;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    width: calc(100% - (var(--spacing-md) * 2));
+    height: 70vh; /* Fixed height when open */
+    border-radius: var(--radius-xl);
+    background: rgba(15, 15, 15, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    padding: var(--spacing-lg);
+    
+    /* Hidden state */
+    transform: translateY(120%);
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    overflow: hidden;
+  }
+
+  .app-layout__sidebar.is-open {
+    transform: translateY(0);
+  }
+  
+  /* Mobile Toggle Button */
+  .mobile-selection-toggle {
+    display: flex;
+    position: fixed;
+    bottom: var(--spacing-lg);
+    left: var(--spacing-lg);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-accent-primary);
+    color: var(--color-bg-primary);
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    z-index: 900;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  .mobile-selection-toggle:active {
+    transform: scale(0.9);
+  }
+  
+  .toggle-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--color-error);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-bg-primary);
+  }
+
+  /* Remove the handle, we'll use a cleaner UI */
+  .app-layout__sidebar::before {
+    display: none;
+  }
+  
+  .selected-films__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0;
+    border-bottom: none;
+    height: 100%; /* Fill the collapsed height */
+  }
+  
+  .selected-films__title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+  
+  .btn-block {
+    width: auto;
+    padding: 0.5rem 1.5rem;
+  }
+  
+  .selected-films__list {
+    margin-top: var(--spacing-lg);
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-bottom: var(--spacing-xl);
+  }
 }
 
 .sidebar-content {
@@ -623,6 +749,15 @@ onMounted(async () => {
   text-transform: uppercase;
   font-size: var(--font-size-sm);
   letter-spacing: 0.05em;
+}
+
+.recommendations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
 }
 
 .sort-controls select {
@@ -840,5 +975,39 @@ onMounted(async () => {
   .recommendation-hero__badge {
     align-self: center;
   }
+}
+
+
+/* Recommendation Card Styles */
+.recommendation-card {
+  position: relative;
+  transition: transform var(--transition-normal);
+}
+
+.recommendation-card:hover {
+  transform: translateY(-5px);
+  z-index: 10;
+}
+
+.recommendation-card__actions {
+  position: absolute;
+  bottom: var(--spacing-sm);
+  right: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-xs);
+  z-index: 20;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all var(--transition-fast);
+}
+
+.recommendation-card:hover .recommendation-card__actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hide mobile toggle by default on desktop */
+.mobile-selection-toggle {
+  display: none;
 }
 </style>

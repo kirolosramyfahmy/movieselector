@@ -26,7 +26,7 @@ async def get_popular_films(
     genre: Optional[str] = None,
     year: Optional[int] = None,
     min_rating: Optional[float] = None,
-    sort_by: str = Query("popularity", regex="^(popularity|recent_popular)$"),
+    sort_by: str = Query("rating", regex="^(popularity|recent_popular|rating)$"),
     db: Session = Depends(get_db)
 ):
     """Get popular films with optional filters."""
@@ -51,9 +51,13 @@ async def get_popular_films(
     if min_rating:
         query = query.filter(Film.vote_average >= min_rating)
     
-    # Filter out Indian films (User Request)
-    indian_languages = ['hi', 'te', 'ta', 'ml', 'kn']
-    query = query.filter(Film.original_language.notin_(indian_languages))
+    # Filter out Indian films and other specific languages (User Request)
+    excluded_languages = ['hi', 'te', 'ta', 'ml', 'kn', 'mr', 'bn', 'pa', 'gu']
+    query = query.filter(Film.original_language.notin_(excluded_languages))
+    
+    # Filter out specific unwanted films (User Request)
+    excluded_titles = ["High School of the Dead", "Highschool of the Dead"]
+    query = query.filter(Film.titre.notin_(excluded_titles))
     
     # Filter out films without posters (User Request)
     query = query.filter(Film.poster_url.isnot(None))
@@ -68,6 +72,11 @@ async def get_popular_films(
     if sort_by == "recent_popular":
         # Sort by year desc, then popularity desc
         query = query.order_by(Film.annee.desc(), Film.popularity.desc())
+    elif sort_by == "rating":
+        # "Mastodons" logic: High vote_count (proxy for admissions) AND High rating.
+        # Sorting by vote_count DESC ensures we get the most watched/rated films first (Avengers, Interstellar).
+        # Then by vote_average DESC to break ties (though ties in vote_count are rare for top films).
+        query = query.order_by(Film.vote_count.desc(), Film.vote_average.desc())
     else:
         # Default: popularity desc
         query = query.order_by(Film.popularity.desc())

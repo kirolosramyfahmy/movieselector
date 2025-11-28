@@ -130,6 +130,7 @@ class TMDBService:
             "poster_url": self.get_poster_url(details.get("poster_path")),
             "popularity": details.get("popularity", 0.0),
             "vote_average": details.get("vote_average", 0.0),
+            "vote_count": details.get("vote_count", 0),
             "overview": details.get("overview"),
             "director": director,
             "actors": actors,

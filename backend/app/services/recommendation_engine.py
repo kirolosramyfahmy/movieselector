@@ -39,6 +39,11 @@ class RecommendationEngine:
         # Title words
         if film.titre:
             features.extend(film.titre.lower().split())
+            
+        # Overview (Synopsis) - Adds semantic context
+        if film.overview:
+            # Give overview words less weight than keywords/genres but valuable context
+            features.extend(film.overview.lower().split())
         
         return " ".join(features)
     
@@ -130,13 +135,7 @@ class RecommendationEngine:
     ) -> List[Film]:
         """
         Get film recommendations based on selected films and feedback.
-        
-        Args:
-            db: Database session
-            selected_film_ids: IDs of films user selected as favorites
-            liked_film_ids: IDs of recommended films user liked
-            disliked_film_ids: IDs of recommended films user disliked
-            limit: Number of recommendations to return
+        Includes quality re-ranking to favor better-rated films.
         """
         if liked_film_ids is None:
             liked_film_ids = []
@@ -182,17 +181,44 @@ class RecommendationEngine:
                 if similar_id in film_scores:
                     film_scores[similar_id] -= sim.score * 0.5  # Reduce score
         
-        # Sort by score and get top films
-        sorted_films = sorted(
+        # Initial sort by raw similarity
+        sorted_candidates = sorted(
             film_scores.items(),
             key=lambda x: x[1],
             reverse=True
-        )[:limit]
+        )
         
-        recommended_ids = [film_id for film_id, _ in sorted_films]
+        # Take a larger pool of candidates for re-ranking (e.g. 3x the limit)
+        # This allows us to filter out low-quality films that might be highly similar
+        pool_size = limit * 3
+        top_candidate_ids = [film_id for film_id, _ in sorted_candidates[:pool_size]]
         
-        # Fetch films maintaining order
-        films = db.query(Film).filter(Film.id.in_(recommended_ids)).all()
-        films_dict = {film.id: film for film in films}
+        if not top_candidate_ids:
+            return []
+            
+        # Fetch candidate films to get their ratings
+        candidates = db.query(Film).filter(Film.id.in_(top_candidate_ids)).all()
+        candidate_map = {f.id: f for f in candidates}
         
-        return [films_dict[film_id] for film_id in recommended_ids if film_id in films_dict]
+        # Re-rank based on Quality Score
+        # Final Score = Similarity * (1 + Rating Boost)
+        # This gives a slight edge to better movies without ignoring similarity
+        final_scores = []
+        
+        for film_id, raw_score in sorted_candidates[:pool_size]:
+            film = candidate_map.get(film_id)
+            if not film:
+                continue
+                
+            # Normalize rating (0-10) to a boost factor (0.0 - 0.5)
+            # A 10/10 movie gets a 50% score boost. A 0/10 movie gets 0% boost.
+            rating_boost = (film.vote_average or 0) / 20.0 
+            
+            final_score = raw_score * (1 + rating_boost)
+            final_scores.append((film, final_score))
+            
+        # Sort by final quality-adjusted score
+        final_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        # Return top N films
+        return [item[0] for item in final_scores[:limit]]

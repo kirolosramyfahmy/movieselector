@@ -259,8 +259,10 @@ const handleBlur = () => {
   font-weight: var(--font-weight-medium);
   margin-bottom: 2px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
   color: var(--color-text-primary);
 }
 

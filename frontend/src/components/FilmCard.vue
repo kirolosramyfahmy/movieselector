@@ -9,6 +9,7 @@
         v-if="film.poster_url" 
         :src="film.poster_url" 
         :alt="film.titre"
+        class="film-card__image"
         loading="lazy"
       />
       <div v-else class="film-card__poster-placeholder">
@@ -44,6 +45,10 @@
           {{ genre }}
         </span>
       </div>
+      
+      <p v-if="film.overview" class="film-card__overview">
+        {{ film.overview }}
+      </p>
     </div>
   </div>
 </template>
@@ -102,14 +107,14 @@ const handleClick = () => {
   position: relative;
   aspect-ratio: 2/3;
   overflow: hidden;
-  background: var(--color-bg-tertiary);
+  background: #000000; /* Black background for letterboxing */
 }
 
 .film-card__image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: top center;
+  object-fit: contain; /* Ensure full image is visible */
+  object-position: center;
   transition: transform var(--transition-slow);
 }
 
@@ -227,6 +232,18 @@ const handleClick = () => {
   white-space: nowrap;
 }
 
+.film-card__overview {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-sm);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0.8;
+}
+
 /* Selected State */
 .film-card--selected {
   border-color: var(--color-accent-primary);
@@ -278,6 +295,8 @@ const handleClick = () => {
   font-size: var(--font-size-base);
   margin-bottom: 2px;
   -webkit-line-clamp: 1;
+  line-height: 1.5;
+  padding-top: 4px;
 }
 
 .film-card--compact .film-card__meta {
@@ -287,7 +306,8 @@ const handleClick = () => {
 
 .film-card--compact .film-card__genres,
 .film-card--compact .film-card__overlay,
-.film-card--compact .film-card__actions {
+.film-card--compact .film-card__actions,
+.film-card--compact .film-card__overview {
   display: none;
 }
 
