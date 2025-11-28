@@ -26,7 +26,7 @@ async def get_popular_films(
     genre: Optional[str] = None,
     year: Optional[int] = None,
     min_rating: Optional[float] = None,
-    sort_by: str = Query("rating", regex="^(popularity|recent_popular|rating)$"),
+    sort_by: str = Query("recent_popular", regex="^(popularity|recent_popular|rating)$"),
     db: Session = Depends(get_db)
 ):
     """Get popular films with optional filters."""

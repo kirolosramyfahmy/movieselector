@@ -253,7 +253,7 @@ const similarFilmsMap = ref({})
 const loading = ref(false)
 const currentFilters = ref({})
 const currentPage = ref(1)
-const currentSort = ref('rating') // Default to rating
+const currentSort = ref('recent_popular') // Default to recent_popular
 const hasMore = ref(true) // Simplified for now, ideally backend returns total count
 const isSidebarOpen = ref(false)
 
